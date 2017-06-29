@@ -21,18 +21,21 @@ const GroupSchema = new Schema({
   }],
 }, { timestamps: true });
 
+// create meetup and add it to the meetups array in the group
 GroupSchema.statics.addMeetup = async function (id, args) {
   const Meetup = mongoose.model('Meetup');
 
-  const group = await this.findById(id);
+  // add group id to the meetup group element,
+  // this is the author of the meetup
+  const meetup = await new Meetup({ ...args, group: id });
+  // find group with id provided in the url
+  // push the meetup id into the meetups element
+  const group = await this.findByIdAndUpdate(id, { $push: { meetups: meetup.id } });
 
-  const meetup = await new Meetup({ ...args, group });
-
-  group.meetups.push(meetup);
-
-  const result = await Promise.all([meetup.save(), group.save()]);
-
-  return result;
+  return {
+    meetup: await meetup.save(),
+    group,
+  };
 };
 
 export default mongoose.model('Group', GroupSchema);
